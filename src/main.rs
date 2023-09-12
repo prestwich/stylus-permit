@@ -174,6 +174,24 @@ where
     T: DomainInfo,
     U: Erc20Details,
 {
+    pub fn _mint(&mut self, to: Address, amount: U256) -> Erc20Result<()> {
+        let total = self.total_supply.get();
+
+        self.saturating_credit(to, amount)?;
+        self.total_supply.set(total + amount);
+
+        Ok(())
+    }
+
+    pub fn _burn(&mut self, from: Address, amount: U256) -> Erc20Result<()> {
+        let total = self.total_supply.get();
+
+        let burned = self.saturating_debit(from, amount)?;
+        self.total_supply.set(total - burned);
+
+        Ok(())
+    }
+
     fn get_domain(&self) -> Eip712Domain {
         Eip712Domain {
             name: T::NAME.map(std::borrow::Cow::Borrowed),
@@ -182,6 +200,17 @@ where
             verifying_contract: Some(contract::address()),
             salt: T::SALT,
         }
+    }
+
+    fn saturating_debit(&mut self, addr: Address, amount: U256) -> Erc20Result<U256> {
+        let mut balance = self.balances.setter(addr);
+
+        let new_bal = balance.get().saturating_sub(amount);
+        let burned = balance.get() - new_bal;
+
+        balance.set(new_bal);
+
+        Ok(burned)
     }
 
     fn debit(&mut self, addr: Address, amount: U256) -> Erc20Result<()> {
@@ -193,6 +222,16 @@ where
         }
         balance.set(bal - amount);
         Ok(())
+    }
+
+    fn saturating_credit(&mut self, addr: Address, amount: U256) -> Erc20Result<U256> {
+        let mut balance = self.balances.setter(addr);
+
+        let new_bal = balance.get().saturating_add(amount);
+        let minted = new_bal - balance.get();
+        balance.set(new_bal);
+
+        Ok(minted)
     }
 
     fn credit(&mut self, addr: Address, amount: U256) -> Erc20Result<()> {
