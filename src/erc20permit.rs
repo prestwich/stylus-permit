@@ -8,12 +8,14 @@ use stylus_sdk::{
     stylus_proc::{external, sol_storage},
 };
 
+/// Domain info for EIP-712
 pub trait DomainInfo {
     const NAME: Option<&'static str>;
     const VERSION: Option<&'static str>;
     const SALT: Option<FixedBytes<32>>;
 }
 
+/// Erc20 details.
 pub trait Erc20Details {
     const NAME: &'static str;
     const SYMBOL: &'static str;
@@ -80,6 +82,18 @@ where
     T: DomainInfo,
     U: Erc20Details,
 {
+    pub fn name() -> Result<String, Vec<u8>> {
+        Ok(U::NAME.to_owned())
+    }
+
+    pub fn symbol() -> Result<String, Vec<u8>> {
+        Ok(U::SYMBOL.to_owned())
+    }
+
+    pub fn decimals() -> Result<u8, Vec<u8>> {
+        Ok(U::DECIMALS)
+    }
+
     pub fn total_supply(&self) -> Result<U256, Vec<u8>> {
         Ok(self._total_supply())
     }
