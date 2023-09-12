@@ -74,10 +74,6 @@ sol! {
         error InsufficientBalance();
         #[derive(Default)]
         error InsufficientAllowance();
-        #[derive(Default)]
-        error AllowanceOverflow();
-        #[derive(Default)]
-        error AllowanceUnderflow();
 
         event Transfer(address indexed from, address indexed to, uint256 amount);
 
@@ -95,8 +91,6 @@ impl Erc20Errors {
             Erc20Errors::InvalidPermit(e) => e.encode(),
             Erc20Errors::InsufficientBalance(e) => e.encode(),
             Erc20Errors::InsufficientAllowance(e) => e.encode(),
-            Erc20Errors::AllowanceOverflow(e) => e.encode(),
-            Erc20Errors::AllowanceUnderflow(e) => e.encode(),
         }
     }
 }
@@ -202,6 +196,8 @@ where
         }
     }
 
+    /// Debits an account with the given amount, saturating the balance, and
+    /// returning the amount actually debited.
     fn saturating_debit(&mut self, addr: Address, amount: U256) -> Erc20Result<U256> {
         let mut balance = self.balances.setter(addr);
 
@@ -213,6 +209,8 @@ where
         Ok(burned)
     }
 
+    /// Debits an account with the given amount, returning an error if the
+    /// balance is insufficient.
     fn debit(&mut self, addr: Address, amount: U256) -> Erc20Result<()> {
         let mut balance = self.balances.setter(addr);
 
@@ -224,6 +222,8 @@ where
         Ok(())
     }
 
+    /// Credits an account with the given amount, saturating the balance, and
+    /// returning the amount actually credited.
     fn saturating_credit(&mut self, addr: Address, amount: U256) -> Erc20Result<U256> {
         let mut balance = self.balances.setter(addr);
 
@@ -234,6 +234,7 @@ where
         Ok(minted)
     }
 
+    /// Credits an account with the given amount.
     fn credit(&mut self, addr: Address, amount: U256) -> Erc20Result<()> {
         let mut balance = self.balances.setter(addr);
 
